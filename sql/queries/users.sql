@@ -33,3 +33,12 @@ DELETE FROM users;
 
 -- name: List :many
 SELECT name FROM users;
+
+-- name: ListFeeds :many
+SELECT 
+    feeds.name AS feed_name,
+    feeds.url, 
+    users.name AS user_name
+FROM 
+    feeds
+    INNER JOIN users ON feeds.user_id = users.id;

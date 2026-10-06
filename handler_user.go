@@ -9,6 +9,19 @@ import (
 	"github.com/paulhoffM/blog/internal/database"
 )
 
+func handlerListFeeds(programState *state, cmd command) error{
+    feeds, err := programState.db.ListFeeds(context.Background())
+        if err != nil {
+            return fmt.Errorf("couldn't retrieve feeds: %w", err)
+        }
+    for _, feed := range feeds {
+        fmt.Println(feed.FeedName)
+        fmt.Println(feed.Url)
+        fmt.Println(feed.UserName)
+    }
+    return nil
+}
+
 func handlerAddFeed(programState *state, cmd command) error {
 	ctx := context.Background()
 	timeArg := time.Now()
@@ -45,7 +58,6 @@ func handlerAddFeed(programState *state, cmd command) error {
 
 	return nil
 }
-
 
 
 func handlerAgg(programState *state, cmd command) error {

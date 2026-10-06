@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"database/sql"
-	"fmt"
 )
 import _ "github.com/lib/pq"
 
@@ -20,7 +19,6 @@ func main () {
 		if err != nil{
 			log.Fatalf("Could not exeucte read from main: %v", err)
 		}
-	fmt.Println(cfg.CurrentUserName)
 	db, err := sql.Open("postgres", cfg.DbUrl)
 		if err != nil {
 			log.Fatal("Failed to open database")
@@ -41,6 +39,7 @@ func main () {
 	cmds.register("users", handlerGetUsers)
 	cmds.register("agg", handlerAgg)
 	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("feeds", handlerListFeeds)
 	if len(os.Args) < 2 {
 		log.Fatal("Arguments in command missing")
 	}
