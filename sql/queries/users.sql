@@ -20,7 +20,7 @@ VALUES (
 )
 RETURNING *;
 
-    -- name: GetUser :one
+-- name: GetUser :one
 SELECT * FROM users WHERE name = $1;
 
 -- name: GetFeedByUrl :one
@@ -74,11 +74,13 @@ WHERE
     feed_follows.user_id = $1;
 
 
--- name: DeleteFollow: many
+-- name: DeleteFollow :exec
 DELETE FROM 
     feed_follows
+USING
+    feeds
 WHERE
-    INNER JOIN feeds ON feed_follows.feed_id = feeds.id
-WHERE
-    feeds.name = $1
+    feed_follows.feed_id = feeds.id
+    AND feeds.url = $1
+    AND feed_follows.user_id = $2;
 

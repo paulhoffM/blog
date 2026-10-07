@@ -1,36 +1,37 @@
 package main
 
 import (
-	"github.com/paulhoffM/blog/internal/config"
-	"github.com/paulhoffM/blog/internal/database"
+	"database/sql"
 	"log"
 	"os"
-	"database/sql"
+
+	"github.com/paulhoffM/blog/internal/config"
+	"github.com/paulhoffM/blog/internal/database"
+
+	_ "github.com/lib/pq"
 )
-import _ "github.com/lib/pq"
 
 type state struct {
-	db *database.Queries
+	db  *database.Queries
 	cfg *config.Config
 }
 
-func main () {
+func main() {
 	cfg, err := config.Read()
-		if err != nil{
-			log.Fatalf("Could not exeucte read from main: %v", err)
-		}
+	if err != nil {
+		log.Fatalf("Could not exeucte read from main: %v", err)
+	}
 	db, err := sql.Open("postgres", cfg.DbUrl)
-		if err != nil {
-			log.Fatal("Failed to open database")
-		}
+	if err != nil {
+		log.Fatal("Failed to open database")
+	}
 	defer db.Close()
 	dbQueries := database.New(db)
 	programState := &state{
-		db: dbQueries,
+		db:  dbQueries,
 		cfg: &cfg,
-	}	
+	}
 
-	
 	cmds := &commands{
 		registeredCommands: make(map[string]func(*state, command) error),
 	}
@@ -43,6 +44,7 @@ func main () {
 	cmds.register("feeds", handlerListFeeds)
 	cmds.register("follow", middlewareLoggedIn(handlerFollow))
 	cmds.register("following", middlewareLoggedIn(handlerFollowList))
+	cmds.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 	if len(os.Args) < 2 {
 		log.Fatal("Arguments in command missing")
 	}
@@ -50,10 +52,8 @@ func main () {
 	cmdStr.Name = os.Args[1]
 	cmdStr.Args = os.Args[2:]
 	err = cmds.run(programState, cmdStr)
-		if err != nil {
-			log.Fatal(err)
-		}
-	
-		
-}
+	if err != nil {
+		log.Fatal(err)
+	}
 
+}
