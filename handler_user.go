@@ -9,9 +9,52 @@ import (
 	"github.com/paulhoffM/blog/internal/database"
 )
 
+
+func handlerFollowList(programState *state, cmd command) error {
+	ctx := context.Background()
+	user, err := programState.db.GetUser(ctx, programState.cfg.CurrentUserName)
+		if err != nil {
+			return fmt.Errorf("couldn't retrieve user: %w", err)
+		}
+	feedFollows, err := programState.db.GetFeedFollowsForUser(ctx, user.ID)
+	for _, feed := range feedFollows{
+		fmt.Println(feed.FeedName)
+	}
+return nil
+}
+
+func handlerFollow(programState *state, cmd command) error {
+if len(cmd.Args) != 1 {
+	log.Fatalf("Provide URL only")
+}
+ctx := context.Background()
+timeArg := time.Now()
+user, err := programState.db.GetUser(ctx, programState.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("couldn't retrieve user: %w", err)
+	}
+feed, err := programState.db.GetFeedByUrl(ctx, cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("couldn't retrieve feed: %w", err)
+	}
+_, err = programState.db.CreateFeedFollow(ctx,  database.CreateFeedFollowParams{
+	ID : uuid.New(),
+	CreatedAt : timeArg,
+	UpdatedAt : timeArg,
+	FeedID : feed.ID,
+	UserID : user.ID,
+})
+	if err != nil {
+		return fmt.Errorf("couldn't follow: %w", err)
+	}
+fmt.Println(feed.Name)
+fmt.Println(programState.cfg.CurrentUserName)
+return nil
+}
+
 func handlerListFeeds(programState *state, cmd command) error{
-    feeds, err := programState.db.ListFeeds(context.Background())
-        if err != nil {
+	feeds, err := programState.db.ListFeeds(context.Background())
+	if err != nil {
             return fmt.Errorf("couldn't retrieve feeds: %w", err)
         }
     for _, feed := range feeds {
@@ -25,6 +68,7 @@ func handlerListFeeds(programState *state, cmd command) error{
 func handlerAddFeed(programState *state, cmd command) error {
 	ctx := context.Background()
 	timeArg := time.Now()
+	NewID := uuid.New()
 	user, err := programState.db.GetUser(ctx, programState.cfg.CurrentUserName)
 		if err!= nil{
 			log.Fatal("User does not exit")
@@ -35,7 +79,7 @@ func handlerAddFeed(programState *state, cmd command) error {
 	}
 
 	feed , err := programState.db.CreateFeed(ctx,  database.CreateFeedParams{
-			ID : uuid.New(),
+			ID : NewID,
 			CreatedAt : timeArg,
 			UpdatedAt : timeArg,
 			Name : cmd.Args[0],
@@ -45,7 +89,19 @@ func handlerAddFeed(programState *state, cmd command) error {
 		if err != nil {
 			return fmt.Errorf("couldn't create feed: %w", err)
 		}
-		
+	
+	_ , err = programState.db.CreateFeedFollow(ctx,  database.CreateFeedFollowParams{
+			ID : uuid.New(),
+			CreatedAt : timeArg,
+			UpdatedAt : timeArg,
+			FeedID : NewID,
+			UserID : user.ID,
+	})
+		if err != nil {
+			return fmt.Errorf("couldn't create feed follow: %w", err)
+		}
+	
+
 	fmt.Println("Feed created successfully:")
 	fmt.Printf("* ID:            %s\n", feed.ID)
 	fmt.Printf("* Created:       %v\n", feed.CreatedAt)
