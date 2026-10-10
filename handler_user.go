@@ -10,6 +10,21 @@ import (
 	"github.com/paulhoffM/blog/internal/database"
 )
 
+func handlerBrowse(programState *state, cmd command) error {
+	limit := int32(2)
+	posts, err := programState.db.GetPosts(context.Background(), limit)
+	if err != nil {
+		return err
+	}
+	for _, post := range posts {
+		fmt.Println(post.Title)
+		fmt.Printf(">>>%s\n", post.Description)
+		fmt.Println("------------------------------------------------")
+
+	}
+	return nil
+}
+
 func handlerUnfollow(programState *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		log.Fatalf("Provide URL only")
@@ -123,13 +138,21 @@ func handlerAddFeed(programState *state, cmd command, user database.User) error 
 }
 
 func handlerAgg(programState *state, cmd command) error {
-	feedURL := "https://www.wagslane.dev/index.xml"
-	ctx := context.Background()
-	feed, err := fetchFeed(ctx, feedURL)
-	if err != nil {
-		log.Fatalf("There is no feed: %v", err)
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %v <time_between_reqs>\n", cmd.Name)
 	}
-	fmt.Println(feed)
+	timeBetweenRequests, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return err
+	}
+	ticker := time.NewTicker(timeBetweenRequests)
+	fmt.Printf("Collect feeds every %s\n", timeBetweenRequests)
+	for ; ; <-ticker.C {
+		err = scrapeFeeds(programState)
+		if err != nil {
+			fmt.Printf("A feed was not caught %s\n", err)
+		}
+	}
 	return nil
 }
 

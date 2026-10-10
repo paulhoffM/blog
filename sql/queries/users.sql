@@ -20,11 +20,28 @@ VALUES (
 )
 RETURNING *;
 
+-- name: CreatePost :one
+INSERT INTO posts (id, created_at, updated_at, title, url, description, published_at, feed_id)
+VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    $8
+)
+RETURNING *;
+
 -- name: GetUser :one
 SELECT * FROM users WHERE name = $1;
 
 -- name: GetFeedByUrl :one
 SELECT * FROM feeds WHERE url = $1;
+
+-- name: GetPosts :many
+SELECT * FROM posts ORDER BY published_at DESC LIMIT $1;
 
 -- name: Reset :exec
 DELETE FROM users;
@@ -84,3 +101,14 @@ WHERE
     AND feeds.url = $1
     AND feed_follows.user_id = $2;
 
+-- name: MarkFeedFetched :one
+UPDATE feeds
+SET updated_at = NOW(), last_fetched_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: GetNextFeedToFetch :one
+SELECT *
+FROM feeds
+ORDER BY last_fetched_at NULLS FIRST
+LIMIT 1;
